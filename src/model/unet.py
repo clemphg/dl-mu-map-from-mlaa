@@ -51,6 +51,7 @@ class UNet(nn.Module):
         
     def forward(self, x):
         x = self.initial(x)
+        
         e1 = self.enc1(x)
         e2 = self.enc2(self.pool(e1))
         e3 = self.enc3(self.pool(e2))
