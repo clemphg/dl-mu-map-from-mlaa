@@ -19,9 +19,9 @@ class ConvBlock(nn.Module):
         return self.block(x)
 
 
-class UNet3D(nn.Module):
+class UNet(nn.Module):
     def __init__(self, in_channels=2, out_channels=1, base_filters=12):
-        super(UNet3D, self).__init__()
+        super(UNet, self).__init__()
         
         # initial merging layer
         self.initial = nn.Conv3d(in_channels, base_filters, kernel_size=3, padding=1)
@@ -68,7 +68,7 @@ class UNet3D(nn.Module):
 # Example usage
 if __name__ == "__main__":
 
-    model = UNet3D()
+    model = UNet()
 
     x = torch.randn(8, 2, 32, 32, 32)  # batch size of 8, 2 input channels, 32x32x32 volume
 
