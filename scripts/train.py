@@ -1,5 +1,9 @@
 
+import os
+import sys
 from tqdm import tqdm
+import pickle as pkl
+import dotenv
 
 import torch
 import torch.nn as nn
@@ -8,7 +12,10 @@ from torch.utils.data import Dataloader
 
 from torch.utils.tensorboard import SummaryWriter
 
-from src.model.unet import UNet
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+dotenv.load_dotenv()
+
+from src.models.unet import UNet
 from src.utils.data.patch_dataset import PatchDataset
 from src.utils.train_utils import get_logger, save_model_weights
 
@@ -23,18 +30,21 @@ def main():
 
     # parameters
     batch_size = 128
-    num_epochs = 50000 # adapted to have about 10*9955 total iterations 
+    num_epochs = 3830 # adapted to have about 10*9955 total iterations 
 
     lr_initial = 0.001
     lr_decay_rate = 1/2
     lr_decay_freq = 2
 
     # data
-    path_inputs = ""
-    path_targets = ""
+    path_inputs = os.environ['PATH_MLAA']
+    path_targets = os.environ['PATH_REFERENCE']
 
-    id_patients_train = []
-    id_patients_valid = []
+    path_id_patients = os.environ['PATH_ID_PATIENTS']
+    with open(path_id_patients, 'rb') as f:
+        id_patients = pkl.load(f)
+    id_patients_train = id_patients['train']
+    id_patients_valid = id_patients['train_valid']
 
     train_dataset = PatchDataset(id_patients=id_patients_train,
                                  path_inputs=path_inputs,

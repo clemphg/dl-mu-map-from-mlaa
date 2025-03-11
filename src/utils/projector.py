@@ -12,10 +12,10 @@ import array_api_compat.torch as xp
 
 class Projector():
     def __init__(self,
-                 voxel_shape: float = (3.90625, 3.90625, 6),
-                 volume_shape: tuple = (16, 128, 128),
-                 num_rings: int = 16,
-                 max_ring_difference: int = 16,
+                 voxel_shape: float = (1.953125, 1.953125, 2),
+                 volume_shape: tuple = (64, 256, 256),
+                 num_rings: int = 32,
+                 max_ring_difference: int = 30,
                  diameter: float = 842,
                  num_sides: int = 300,
                  num_lor_endpoints_per_side: int = 1,
@@ -24,10 +24,10 @@ class Projector():
                  use_res_model: bool = False,
                  fwhm: float = 4.5,
                  use_tof: bool = True,
-                 num_tofbins: int=29,
-                 tofbin_width: float = 25.37139696,
+                 num_tofbins: int=13,
+                 tofbin_width: float = 60,
                  sigma_tof: float = 24.50529087048832, 
-                 num_sigmas: float = 3.0, 
+                 num_sigmas: float = 2.0, 
                  tofcenter_offset: float = 0,
                  device='cuda') -> None:
         """_summary_
@@ -98,11 +98,11 @@ class Projector():
     def use_tof(self) -> bool:
         return self.__use_tof
 
-    def project(self, x:torch.Tensor) -> torch.Tensor:
+    def transform(self, x:torch.Tensor) -> torch.Tensor:
         """Forward projection."""
         return self.__projector(x) 
 
-    def backproject(self, y:torch.Tensor) -> torch.Tensor:
+    def transposed_transform(self, y:torch.Tensor) -> torch.Tensor:
         """Back projection."""
         return self.__projector.adjoint(y)
     

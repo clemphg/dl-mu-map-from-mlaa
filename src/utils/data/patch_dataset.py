@@ -15,7 +15,7 @@ class PatchDataset(Dataset):
                  path_inputs: str,
                  path_targets: str,
                  patch_shape: tuple = (32, 32, 32),
-                 nb_slices_volume: int = 128):
+                 nb_slices_volume: int = 64):
         
         self.__id_patients = id_patients
         
@@ -26,16 +26,26 @@ class PatchDataset(Dataset):
 
         self.__nb_slices_volume = nb_slices_volume
 
+        id_patients_str = [str(id) for id in id_patients]
+
+        list_files_inputs = os.listdir(path_inputs)
+        self.__filenames_inputs = [file for file in list_files_inputs if file.split('.')[0].split('_')[0] in id_patients_str]
+
+        list_files_targets = os.listdir(path_targets)
+        self.__filenames_targets = [file for file in list_files_targets if file.split('.')[0].split('_')[0] in id_patients_str]
+
+        for f in self.__filenames_inputs:
+            assert f in self.__filenames_targets
+
     def __len__(self):
-        return len(self.__id_patients)
+        return len(self.__filenames_inputs)
 
     def __getitem__(self, idx):
-
-        id_patient = self.__id_patients[idx]
+        filename = self.__filenames_inputs[idx]
 
         # load images
-        filename_input = os.path.join(self.__path_inputs, f"{id_patient}.npy")
-        filename_target = os.path.join(self.__path_targets, f"{id_patient}.npy")
+        filename_input = os.path.join(self.__path_inputs, filename)
+        filename_target = os.path.join(self.__path_targets, filename)
 
         input_img = np.load(filename_input)
         target_img = np.load(filename_target)
@@ -58,9 +68,9 @@ class PatchDataset(Dataset):
         processed_input = self.__extract_patch(input_img, center)
         processed_target = self.__extract_patch(target_img, center)
 
-        # normalize
-        processed_input = self.__normalize(input_img)
-        processed_target = self.__normalize(target_img)
+        # normalize activity between 0 and 1
+        processed_input[0] = self.__normalize(input_img[0])
+        processed_target[0] = self.__normalize(target_img[0])
 
         processed_input = torch.tensor(processed_input, dtype=torch.float32)
         processed_target = torch.tensor(processed_target, dtype=torch.float32)

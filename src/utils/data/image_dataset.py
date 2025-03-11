@@ -10,28 +10,28 @@ from torch.utils.data import Dataset
 class ImageDataset(Dataset):
     def __init__(self,
                  path_data: str,
-                 nb_slices_volume: int = 128,
+                 nb_slices_volume: int = 64,
                  id_patients: list[int] = None):
         
         self.__path_data = path_data
         self.__nb_slices_volume = nb_slices_volume
         self.__id_patients = id_patients
 
-    def __len__(self):
-        if self.__id_patients is not None:
-            length = len(self.__id_patients)
+        list_files_data = os.listdir(path_data)
+        if id_patients is not None:
+            id_patients_str = [str(id) for id in id_patients]
+            self.__filenames_data = [file for file in list_files_data if file.split('.')[0].split('_')[0] in id_patients_str]
         else:
-            length = len(os.listdir(self.__path_data))
-        return length
+            self.__filenames_data = list_files_data
+
+    def __len__(self):
+        return len(self.__filenames_data)
 
     def __getitem__(self, idx):
-
-        id_patient = idx
-        if self.__id_patients is not None:
-            id_patient = self.__id_patients[idx]
+        filename = self.__filenames_data[idx]
 
         # load images
-        filename_data = os.path.join(self.__path_data, f"{id_patient}.npy")
+        filename_data = os.path.join(self.__path_data, filename)
 
         image = np.load(filename_data)
 
@@ -41,4 +41,4 @@ class ImageDataset(Dataset):
 
         processed_image = torch.tensor(image, dtype=torch.float32)
 
-        return processed_image
+        return filename, processed_image

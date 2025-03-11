@@ -7,8 +7,13 @@ import sys
 from tqdm import tqdm
 import numpy as np
 import pickle as pkl
+import dotenv
 
 import torch
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+dotenv.load_dotenv()
 
 from src.utils.data.image_dataset import ImageDataset
 
@@ -17,9 +22,9 @@ def save_mean(mean, file_path):
         pkl.dump(mean, f)
 
 def main():
-    out_filename = "/home/cphung/Data/CHU_POITIERS/mean_attenuation_128x256x256.pkl"
-    path_data = "/home/cphung/Data/CHU_POITIERS/256_npy/"
-    path_id_patients = f"/home/cphung/Data/id_patients_train-valid-test_final.pkl"
+    out_filename = os.environ['PATH_MEAN_ATN']
+    path_data = os.environ['PATH_REFERENCE']
+    path_id_patients = os.environ['PATH_ID_PATIENTS']
 
     with open(path_id_patients, 'rb') as f:
         id_patients = pkl.load(f)
@@ -27,14 +32,13 @@ def main():
     id_patients_train = id_patients['train']
 
     dataset = ImageDataset(path_data=path_data,
-                           nb_slices_volume=128,
+                           nb_slices_volume=64,
                            id_patients=id_patients_train)
     
     running_meansum = 0
 
     for idx in tqdm(range(len(dataset)), ncols=100):
-        mu_img = dataset[idx][1]
-
+        filename, mu_img = dataset[idx][1]
         running_meansum += torch.mean(mu_img)
 
     # save mean
