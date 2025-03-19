@@ -50,7 +50,7 @@ def main():
     mlaa = MLAA(projector=projector,
                 tof_projector=tof_projector,
                 is_tof=True)
-    n_iter = 100
+    n_iter = 300
 
     # initialize mu map
     with open(os.environ['PATH_MEAN_ATN'], 'rb') as f:

@@ -57,7 +57,13 @@ class PatchDataset(Dataset):
 
         # extract 32x32x32 patch whose center is in the body
         body_mask = target_img[1] > 0
+        #print(body_mask[7, 120:-120, 120:-120])
+
+        trim_d, trim_h, trim_w = self.__patch_shape[0]//2, self.__patch_shape[1]//2, self.__patch_shape[2]//2
+        body_mask[:trim_d, :, :] = body_mask[:, :trim_h, :] = body_mask[:, :, :trim_w] = 0
+        body_mask[-trim_d:, :, :] = body_mask[:, -trim_h:, :] = body_mask[:, :, -trim_w:] = 0
         body_indices = np.argwhere(body_mask) # valid indices in the body
+
 
         if len(body_indices) == 0:
             # default to the center
@@ -69,20 +75,24 @@ class PatchDataset(Dataset):
         processed_target = self.__extract_patch(target_img, center)
 
         # normalize activity between 0 and 1
-        processed_input[0] = self.__normalize(input_img[0])
-        processed_target[0] = self.__normalize(target_img[0])
+        processed_input[0] = self.__normalize(processed_input[0])
+        processed_input[1] = self.__normalize(processed_input[1])
+        processed_target[0] = self.__normalize(processed_target[0])
+        processed_target[1] = self.__normalize(processed_target[1])
 
         processed_input = torch.tensor(processed_input, dtype=torch.float32)
         processed_target = torch.tensor(processed_target, dtype=torch.float32)
 
-        return processed_input, processed_target   
+        processed_input += torch.randn_like(processed_input) * 0.1 # TODO: remove this line
+
+        return processed_input, processed_target
     
 
     def __extract_patch(self, volume, center):
-        """Extract a 3D patch centered at the given location."""
+        """Extract a 3D patch centered at given location."""
         c_x, c_y, c_z = center
         p_x, p_y, p_z = self.__patch_shape
-        H, W, D = volume.shape[1:]  # Exclude channel
+        c, H, W, D = volume.shape
 
         # Compute the start and end indices for slicing
         start_x = max(0, c_x - p_x // 2)
