@@ -1,9 +1,8 @@
 
-
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 import torch
+import matplotlib.pyplot as plt
 
 
 class MLAA():
@@ -12,6 +11,7 @@ class MLAA():
                  projector,
                  tof_projector = None,
                  is_tof: bool = False) -> None:
+        super().__init__()
 
         self.projector = projector
 
@@ -60,6 +60,7 @@ class MLAA():
 
             # set nans to zero
             x[torch.isnan(x)] = 0
+            x = torch.clamp(x, min=0)
 
             # MLTR update for mu
             Px = self.P(x)
@@ -80,22 +81,22 @@ class MLAA():
             # could be removed
             if display:
                 fig, axs = plt.subplots(1, 4, figsize=(10,2))
-                p0 = axs[0].imshow(x.cpu().numpy()[8], cmap='hot')
+                p0 = axs[0].imshow(x.cpu().numpy()[32], cmap='hot')
                 plt.colorbar(p0, ax=axs[0])
                 axs[0].axis('off')
                 axs[0].set_title(f"MLAA $\\lambda$, iteration {k+1}")
                 
-                p1 = axs[1].imshow(mu.cpu().numpy()[8], cmap='bone')
+                p1 = axs[1].imshow(mu.cpu().numpy()[32], cmap='bone')
                 plt.colorbar(p1, ax=axs[1])
                 axs[1].axis('off')
                 axs[1].set_title(f"MLAA $\\mu$, iteration {k+1}")
                 
-                p2 = axs[2].imshow(x.cpu().numpy()[:, 64], cmap='hot')
+                p2 = axs[2].imshow(x.cpu().numpy()[:, 128], cmap='hot')
                 plt.colorbar(p2, ax=axs[2])
                 axs[2].axis('off')
                 axs[2].set_title(f"MLAA $\\lambda$, iteration {k+1}")
                 
-                p3 = axs[3].imshow(mu.cpu().numpy()[:, 64], cmap='bone')
+                p3 = axs[3].imshow(mu.cpu().numpy()[:, 128], cmap='bone')
                 plt.colorbar(p3, ax=axs[3])
                 axs[3].axis('off')
                 axs[3].set_title(f"MLAA $\\mu$, iteration {k+1}")
