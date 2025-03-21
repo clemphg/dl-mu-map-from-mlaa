@@ -49,7 +49,7 @@ def main():
     projector = Projector(use_tof=False, use_res_model=True)
     tof_projector = Projector(use_tof=True, use_res_model=True)
 
-    tau = 0.0001
+    tau = 0.00001
     bckg_pet = 0
     use_tof = True
     
@@ -58,8 +58,12 @@ def main():
                 is_tof=use_tof)
     n_iter = 50
 
+
+    clip_act = 100000
+    clip_atn = 0.025
+
     # initialize mu map
-    mu_init = torch.full((64, 256, 256), 0.01) # initialize to water LAC in mm-1
+    mu_init = torch.full((64, 256, 256), 0.0025) # initialize to mean mu value in training
 
 
     for id_patient in tqdm(range(len(dataset)), ncols=100):
@@ -71,6 +75,9 @@ def main():
 
         pet_img = image[0].to(device)
         mu_img = image[1].to(device)
+
+        pet_img = torch.clamp(pet_img, min=0, max=clip_act)
+        mu_img = torch.clamp(mu_img, min=0, max=clip_atn)
 
         # compute projection
 

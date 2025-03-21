@@ -20,7 +20,7 @@ class ConvBlock(nn.Module):
 
 
 class DownBlock(nn.Module):
-    """Resolution reduction was performed by 2 × 2 × 2 convolution kernels with stride 2"""
+    """Resolution reduction was performed by 2x2x2 convolution kernels with stride 2"""
     def __init__(self, in_channels, out_channels):
         super(DownBlock, self).__init__()
         self.block = nn.Sequential(
