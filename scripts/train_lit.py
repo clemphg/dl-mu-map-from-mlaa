@@ -12,13 +12,16 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
+import lightning as L
+
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 dotenv.load_dotenv()
 
 from src.models.unet import UNet
+from src.models.lit_unet import LitUNet
 from src.models.losses import image_gradient_difference_loss, line_integral_loss
 from src.utils.data.patch_dataset import PatchDataset
-from src.utils.trainer import Trainer
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -102,25 +105,17 @@ def main():
 
 
     # initialization
-    model = UNet(in_channels=2, out_channels=1).to(device)
     loss = lambda x, y: full_loss(x, y, beta1, beta2)
-    optimizer = optim.Adam(model.parameters(), lr=lr_initial)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=lr_decay_freq, gamma=lr_decay_rate)
 
-    trainer = Trainer(train_dataloader=train_dataloader,
-                      val_dataloader=valid_dataloader,
-                      model=model,
-                      loss=loss,
-                      optimizer=optimizer,
-                      scheduler=scheduler,
-                      epochs=num_epochs,
-                      start_epoch=0,
-                      grad_clip=None,
-                      weights_dir="./weights",
-                      log_dir="./logs",
-                      ema_rate=None,
-                      checkpoint_freq=1,
-                      device=device)
+    model = LitUNet(model=UNet(in_channels=2, out_channels=1),
+                    loss_fun=loss,
+                    lr=lr_initial)
+
+    trainer = L.Trainer(default_root_dir='./')
+    trainer.fit(model=model,
+                train_dataloaders=train_dataloader,
+                val_dataloaders=valid_dataloader,
+                max_epochs=num_epochs)
 
     print("\n"+"-"*23+" TRAINING "+"-"*23+"\n")
     trainer.train()

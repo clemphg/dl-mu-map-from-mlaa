@@ -15,7 +15,9 @@ class PatchDataset(Dataset):
                  path_inputs: str,
                  path_targets: str,
                  patch_shape: tuple = (32, 32, 32),
-                 nb_slices_volume: int = 64):
+                 nb_slices_volume: int = 64,
+                 norm_pet = None,
+                 norm_mu = None):
         
         self.__id_patients = id_patients
         
@@ -36,6 +38,9 @@ class PatchDataset(Dataset):
 
         for f in self.__filenames_inputs:
             assert f in self.__filenames_targets
+
+        self.norm_pet = norm_pet
+        self.norm_mu = norm_mu
 
     def __len__(self):
         return len(self.__filenames_inputs)
@@ -74,16 +79,16 @@ class PatchDataset(Dataset):
         processed_input = self.__extract_patch(input_img, center)
         processed_target = self.__extract_patch(target_img, center)
 
-        # normalize activity between 0 and 1
-        processed_input[0] = self.__normalize(processed_input[0])
-        processed_input[1] = self.__normalize(processed_input[1])
-        processed_target[0] = self.__normalize(processed_target[0])
-        processed_target[1] = self.__normalize(processed_target[1])
+        # normalize 
+        if self.norm_pet is not None:
+            processed_input[0] = self.norm_pet(processed_input[0])
+            processed_target[0] = self.norm_pet(processed_target[0], clip=True)
+        if self.norm_mu is not None:
+            processed_input[1] = self.norm_mu(processed_input[1])
+            processed_target[1] = self.norm_mu(processed_target[1], clip=True)
 
         processed_input = torch.tensor(processed_input, dtype=torch.float32)
-        processed_target = torch.tensor(processed_target, dtype=torch.float32)
-
-        processed_input += torch.randn_like(processed_input) * 0.1 # TODO: remove this line
+        processed_target = torch.tensor(processed_target, dtype=torch.float32)[1].unsqueeze(0)
 
         return processed_input, processed_target
     

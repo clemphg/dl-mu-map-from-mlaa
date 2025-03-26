@@ -107,13 +107,13 @@ class Trainer():
 
         outputs = self.model(inputs)
 
-        return inputs, outputs
+        return outputs, targets
 
 
     def train(self) -> None:
 
-        # best_val_loss = 1e6
-        # best_val_loss_epoch = -1
+        best_val_loss = 1e6
+        best_val_loss_epoch = -1
 
         for epoch in range(self.start_epoch, self.epochs):
 
@@ -124,7 +124,6 @@ class Trainer():
             pbar = tqdm(self.train_dataloader, desc=f"Training epoch {epoch+1}/{self.epochs}", ncols=100)
             for batch_id, packed in enumerate(pbar):
                 
-                # ok now, but it will maybe changed in the future
                 x, y = self.one_step(packed)
 
                 loss = self.loss(x, y)
@@ -149,56 +148,56 @@ class Trainer():
             if (epoch+1) % self.checkpoint_freq == 0:
                 self.save_model_weights(epoch+1)
 
-            # scheduler
-            if self.scheduler is not None:
-                self.scheduler.step(avg_loss_train)
-
-            # log
-            self.logger.info(f"Epoch {epoch+1}/{self.epochs} - Train loss: {avg_loss_train:.5f}")
-
-            # tensorboard log
-            if self.tensorboard_writer:
-                self.tensorboard_writer.add_scalar('Loss/train', avg_loss_train, epoch+1)
-
-            # # Validation
-            # self.model.eval()
-            # cum_loss_val = 0.0
-
-            # val_pbar = tqdm(self.val_dataloader, desc=f"Validation epoch {epoch+1}/{self.epochs}", ncols=100)
-            # with torch.no_grad():
-            #     for batch_id, packed in enumerate(val_pbar):
-            #         x, y = self.one_step(packed)
-
-            #         loss_val = self.loss(x, y)
-            #         cum_loss_val += loss_val.item()
-        
-            #         val_pbar.set_postfix(loss_val=cum_loss_val/(batch_id+1))
-                
-            # # Saving weights
-            # avg_loss_val = cum_loss_val/len(self.val_dataloader)
-
-            # if avg_loss_val <= best_val_loss:
-            #     print(f"Validation loss improved from {best_val_loss:.5f} (epoch {best_val_loss_epoch+1}) to {avg_loss_val:.5f}.")
-            #     self.save_model_weights(epoch+1)
-            #     best_val_loss = avg_loss_val
-            #     best_val_loss_epoch = epoch
-            # elif best_val_loss==1e6 and epoch+1==self.epochs:
-            #     print(f"No improvement of the loss over validation during training.")
-            #     self.save_model_weights(epoch+1)
-            # else:
-            #     print(f"Validation loss did not improve from {best_val_loss:.5f} (epoch {best_val_loss_epoch+1}).")
-
             # # scheduler
             # if self.scheduler is not None:
-            #     self.scheduler.step(avg_loss_val)
+            #     self.scheduler.step()
 
             # # log
-            # self.logger.info(f"Epoch {epoch+1}/{self.epochs} - Train loss: {avg_loss_train:.5f}, Validation loss: {avg_loss_val:.5f}")
+            # self.logger.info(f"Epoch {epoch+1}/{self.epochs} - Train loss: {avg_loss_train:.5f}")
 
             # # tensorboard log
             # if self.tensorboard_writer:
             #     self.tensorboard_writer.add_scalar('Loss/train', avg_loss_train, epoch+1)
-            #     self.tensorboard_writer.add_scalar('Loss/validation', avg_loss_val, epoch+1)
+
+            # Validation
+            self.model.eval()
+            cum_loss_val = 0.0
+
+            val_pbar = tqdm(self.val_dataloader, desc=f"Validation epoch {epoch+1}/{self.epochs}", ncols=100)
+            with torch.no_grad():
+                for batch_id, packed in enumerate(val_pbar):
+                    x, y = self.one_step(packed)
+
+                    loss_val = self.loss(x, y)
+                    cum_loss_val += loss_val.item()
+        
+                    val_pbar.set_postfix(loss_val=cum_loss_val/(batch_id+1))
+                
+            # Saving weights
+            avg_loss_val = cum_loss_val/len(self.val_dataloader)
+
+            if avg_loss_val <= best_val_loss:
+                print(f"Validation loss improved from {best_val_loss:.5f} (epoch {best_val_loss_epoch+1}) to {avg_loss_val:.5f}.")
+                #self.save_model_weights(epoch+1)
+                best_val_loss = avg_loss_val
+                best_val_loss_epoch = epoch
+            elif best_val_loss==1e6 and epoch+1==self.epochs:
+                print(f"No improvement of the loss over validation during training.")
+                #self.save_model_weights(epoch+1)
+            else:
+                print(f"Validation loss did not improve from {best_val_loss:.5f} (epoch {best_val_loss_epoch+1}).")
+
+            # scheduler
+            if self.scheduler is not None:
+                self.scheduler.step()
+
+            # log
+            self.logger.info(f"Epoch {epoch+1}/{self.epochs} - Train loss: {avg_loss_train:.5f}, Validation loss: {avg_loss_val:.5f}")
+
+            # tensorboard log
+            if self.tensorboard_writer:
+                self.tensorboard_writer.add_scalar('Loss/train', avg_loss_train, epoch+1)
+                self.tensorboard_writer.add_scalar('Loss/validation', avg_loss_val, epoch+1)
 
             print()
 

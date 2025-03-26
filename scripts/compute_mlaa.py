@@ -37,13 +37,15 @@ def main():
     path_id_patients = os.environ['PATH_ID_PATIENTS']
     with open(path_id_patients, 'rb') as f:
         id_patients = pkl.load(f)
-    id_patients = id_patients['train']
-    #id_patients = id_patients['train_valid']
+    #id_patients = id_patients['train']
+    id_patients = id_patients['train_valid']
     print(len(id_patients))
 
     dataset = ImageDataset(path_data=path_data,
                            nb_slices_volume=64,
                            id_patients=id_patients)
+    
+    print(len(dataset))
     
     # initializations
     projector = Projector(use_tof=False, use_res_model=True)
