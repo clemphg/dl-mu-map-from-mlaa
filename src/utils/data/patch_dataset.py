@@ -61,12 +61,16 @@ class PatchDataset(Dataset):
             target_img = target_img[:, -self.__nb_slices_volume:]
 
         # extract 32x32x32 patch whose center is in the body
-        body_mask = target_img[1] > 0
-        #print(body_mask[7, 120:-120, 120:-120])
-
         trim_d, trim_h, trim_w = self.__patch_shape[0]//2, self.__patch_shape[1]//2, self.__patch_shape[2]//2
-        body_mask[:trim_d, :, :] = body_mask[:, :trim_h, :] = body_mask[:, :, :trim_w] = 0
-        body_mask[-trim_d:, :, :] = body_mask[:, -trim_h:, :] = body_mask[:, :, -trim_w:] = 0
+
+        # body_mask = target_img[1] > 0
+        # body_mask[:trim_d, :, :] = body_mask[:, :trim_h, :] = body_mask[:, :, :trim_w] = 0
+        # body_mask[-trim_d:, :, :] = body_mask[:, -trim_h:, :] = body_mask[:, :, -trim_w:] = 0
+
+        body_mask = torch.zeros_like(target_img[1])
+        body_mask[trim_d:-trim_d, trim_h:-trim_h, trim_w:-trim_w] = 1
+
+
         body_indices = np.argwhere(body_mask) # valid indices in the body
 
 

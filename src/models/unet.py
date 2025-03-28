@@ -4,13 +4,13 @@ import torch.nn.functional as F
 
 class ConvBlock(nn.Module):
     """2 3D convolution layers with rectified linear units and batch normalization"""
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, kernel_size=3):
         super(ConvBlock, self).__init__()
         self.block = nn.Sequential(
-            nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv3d(in_channels, out_channels, kernel_size=kernel_size, padding=kernel_size//2),
             nn.ReLU(inplace=True),
             nn.BatchNorm3d(out_channels),
-            nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv3d(out_channels, out_channels, kernel_size=kernel_size, padding=kernel_size//2),
             nn.ReLU(inplace=True),
             nn.BatchNorm3d(out_channels),
         )
@@ -33,41 +33,41 @@ class DownBlock(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, in_channels=2, out_channels=1, base_filters=64):
+    def __init__(self, in_channels=2, out_channels=1, base_filters=64, kernel_size=3):
         super(UNet, self).__init__()
         
         # initial merging layer
-        self.initial = nn.Conv3d(in_channels, base_filters, kernel_size=3, padding=1)
+        self.initial = nn.Conv3d(in_channels, base_filters, kernel_size=kernel_size, padding=kernel_size//2)
         
         # contracting path (ensure the number of filters double at each step)
-        self.enc1 = ConvBlock(base_filters, base_filters)
+        self.enc1 = ConvBlock(base_filters, base_filters, kernel_size=kernel_size)
         self.down1 = DownBlock(base_filters, base_filters)
 
-        self.enc2 = ConvBlock(base_filters, base_filters * 2)
+        self.enc2 = ConvBlock(base_filters, base_filters * 2, kernel_size=kernel_size)
         self.down2 = DownBlock(base_filters * 2, base_filters * 2)
 
-        self.enc3 = ConvBlock(base_filters * 2, base_filters * 4)
+        self.enc3 = ConvBlock(base_filters * 2, base_filters * 4, kernel_size=kernel_size)
         self.down3 = DownBlock(base_filters * 4, base_filters * 4)
 
-        self.enc4 = ConvBlock(base_filters * 4, base_filters * 8)
+        self.enc4 = ConvBlock(base_filters * 4, base_filters * 8, kernel_size=kernel_size)
         self.down4 = DownBlock(base_filters * 8, base_filters * 8)
         
         # bottleneck
-        self.bottleneck = ConvBlock(base_filters * 8, base_filters * 16)
+        self.bottleneck = ConvBlock(base_filters * 8, base_filters * 16, kernel_size=kernel_size)
         self.dropout = nn.Dropout(p=0.15)
 
         # expanding path
         self.up4 = nn.ConvTranspose3d(base_filters * 16, base_filters * 8, kernel_size=2, stride=2)
-        self.dec4 = ConvBlock(base_filters * 16, base_filters * 8)
+        self.dec4 = ConvBlock(base_filters * 16, base_filters * 8, kernel_size=kernel_size)
         
         self.up3 = nn.ConvTranspose3d(base_filters * 8, base_filters * 4, kernel_size=2, stride=2)
-        self.dec3 = ConvBlock(base_filters * 8, base_filters * 4)
+        self.dec3 = ConvBlock(base_filters * 8, base_filters * 4, kernel_size=kernel_size)
         
         self.up2 = nn.ConvTranspose3d(base_filters * 4, base_filters * 2, kernel_size=2, stride=2)
-        self.dec2 = ConvBlock(base_filters * 4, base_filters * 2)
+        self.dec2 = ConvBlock(base_filters * 4, base_filters * 2, kernel_size=kernel_size)
         
         self.up1 = nn.ConvTranspose3d(base_filters * 2, base_filters, kernel_size=2, stride=2)
-        self.dec1 = ConvBlock(base_filters * 2, base_filters)
+        self.dec1 = ConvBlock(base_filters * 2, base_filters, kernel_size=kernel_size)
         
         # output layer
         self.out_conv = nn.Conv3d(base_filters, out_channels, kernel_size=1)

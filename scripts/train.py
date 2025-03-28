@@ -4,7 +4,8 @@ import sys
 from tqdm import tqdm
 import pickle as pkl
 import dotenv
-
+import glob
+import shutil
 import numpy as np
 
 import torch
@@ -22,6 +23,11 @@ from src.utils.trainer import Trainer
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model_path = os.environ['PATH_MODEL']
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
+    shutil.copyfile(os.path.realpath(__file__), os.path.join(model_path, __file__.split(os.sep)[-1]))
 
     # parameters
     batch_size = 16
@@ -103,6 +109,16 @@ def main():
 
     # initialization
     model = UNet(in_channels=2, out_channels=1).to(device)
+
+    if os.path.exists(model_path):
+        list_of_files = glob.glob(os.path.join(model_path, 'weights', '*')) # * means all if need specific format then *.csv
+        if len(list_of_files)>0:
+            last_weights_path = max(list_of_files, key=os.path.getctime)
+            start_epoch = int(last_weights_path.split('.')[0].split('_')[-1])
+            print(f"Resuming from epoch {start_epoch}...")
+            model.load_state_dict(torch.load(last_weights_path, weights_only=True))
+
+
     loss = lambda x, y: full_loss(x, y, beta1, beta2)
     optimizer = optim.Adam(model.parameters(), lr=lr_initial)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=lr_decay_freq, gamma=lr_decay_rate)
@@ -116,8 +132,8 @@ def main():
                       epochs=num_epochs,
                       start_epoch=0,
                       grad_clip=None,
-                      weights_dir="./weights",
-                      log_dir="./logs",
+                      weights_dir=os.path.join(model_path, "weights"),
+                      log_dir=os.path.join(model_path, "logs"),
                       ema_rate=None,
                       checkpoint_freq=1,
                       device=device)

@@ -24,6 +24,7 @@ class ImageDataset(Dataset):
         else:
             self.__filenames_data = list_files_data
 
+
     def __len__(self):
         return len(self.__filenames_data)
 

@@ -27,7 +27,7 @@ def save_image(lambda_mlaa, mu_mlaa, save_path, filename):
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    save_path_mlaa = os.environ['PATH_MLAA']
+    save_path_mlaa = os.environ['PATH_MLAA_TRAIN']
     path_data = os.environ['PATH_REFERENCE']
 
     if not os.path.exists(save_path_mlaa):
@@ -37,8 +37,9 @@ def main():
     path_id_patients = os.environ['PATH_ID_PATIENTS']
     with open(path_id_patients, 'rb') as f:
         id_patients = pkl.load(f)
-    #id_patients = id_patients['train']
-    id_patients = id_patients['train_valid']
+    id_patients = id_patients['train']
+    #id_patients = id_patients['train_valid']
+    #id_patients = id_patients['test']
     print(len(id_patients))
 
     dataset = ImageDataset(path_data=path_data,
@@ -68,9 +69,12 @@ def main():
     mu_init = torch.full((64, 256, 256), 0.0025) # initialize to mean mu value in training
 
 
-    for id_patient in tqdm(range(len(dataset)), ncols=100):
+    pbar = tqdm(range(len(dataset)), ncols=100)
+    for id_patient in pbar:
 
         filename, image = dataset[id_patient]
+
+        pbar.set_postfix({'file': filename})
 
         if filename in os.listdir(save_path_mlaa):
             continue
