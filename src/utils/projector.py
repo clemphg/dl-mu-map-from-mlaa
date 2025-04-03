@@ -44,6 +44,7 @@ class Projector():
             use_tof (bool, optional): Whether to use time-of-flight. Defaults to True.
             device (str, optional): Device for computations. Defaults to 'cuda'.
         """
+        self.volume_shape = volume_shape
 
         # define scanner geometry
         scanner = parallelproj.RegularPolygonPETScannerGeometry(

@@ -19,36 +19,32 @@ from src.algos.mlaa import MLAA
 from src.utils.projector import Projector
 from src.utils.data.image_dataset import ImageDataset
 
-def save_image(lambda_mlaa, mu_mlaa, save_path, filename):
+def save_image(img, save_path, filename):
     full_save_path = os.path.join(save_path, filename)
-    stacked = torch.stack([lambda_mlaa, mu_mlaa]).cpu().numpy()
+    stacked = img.cpu().numpy()
     np.save(full_save_path, stacked)
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    tau = 0.00001
+    tau = 1e-5
     bckg_pet = 0
-    use_tof = True
-
-    n_iter = 50
+    use_tof = False
 
     clip_act = 100000
     clip_atn = 0.025
 
-    split = 'train' # 'train' or 'valid'
+    path_data = os.environ['PATH_REFERENCE_TEST']
+    save_path_measurements = os.path.join(os.environ['PATH_MEASUREMENTS'], f"tau{tau}_{'tof' if use_tof else 'notof'}")
 
-    save_path_mlaa = os.environ[f'PATH_MLAA_{split.upper()}_TAU{tau}']
-    path_data = os.environ['PATH_REFERENCE']
-
-    if not os.path.exists(save_path_mlaa):
-        os.makedirs(save_path_mlaa)
-        print(f"Created directory {save_path_mlaa}")
+    if not os.path.exists(save_path_measurements):
+        os.makedirs(save_path_measurements)
+        print(f"Created directory {save_path_measurements}")
 
     path_id_patients = os.environ['PATH_ID_PATIENTS']
     with open(path_id_patients, 'rb') as f:
         id_patients = pkl.load(f)
-    id_patients = id_patients[split]
+    id_patients = id_patients['test']
     print(len(id_patients))
 
     dataset = ImageDataset(path_data=path_data,
@@ -60,22 +56,11 @@ def main():
     # initializations
     projector = Projector(use_tof=False, use_res_model=True)
     tof_projector = Projector(use_tof=True, use_res_model=True)
-    
-    mlaa = MLAA(projector=projector,
-                tof_projector=tof_projector,
-                is_tof=use_tof)
-
-    # initialize mu map
-    mu_init = torch.full((64, 256, 256), 0.0025) # initialize to mean mu value in training
 
     #pbar = tqdm(range(len(dataset)), ncols=100)
     for id_patient in range(len(dataset)):
 
         filename, image = dataset[id_patient]
-
-        if filename in os.listdir(save_path_mlaa):
-            continue
-        print(filename)
 
         pet_img = image[0].to(device)
         mu_img = image[1].to(device)
@@ -99,17 +84,10 @@ def main():
         y = torch.clamp(tau * (att_sino * proj_act + bckg_pet), min=0)
         ybar = torch.poisson(y)
 
-        # solve mlaa
-        lambda_mlaa, mu_mlaa = mlaa.solve(y=ybar,
-                                          mu_init=mu_init,
-                                          tau=tau,
-                                          bckg_pet=bckg_pet,
-                                          n_iter=n_iter,
-                                          display=False)
+        print(ybar.shape)
         
-        # save reconstruction
-        save_image(lambda_mlaa, mu_mlaa, save_path_mlaa, filename)
-
+        # save measurements
+        save_image(ybar, save_path_measurements, filename)
 
 if __name__=="__main__":
     main()

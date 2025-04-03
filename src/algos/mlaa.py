@@ -46,8 +46,8 @@ class MLAA():
         else:
             y_noTOF = y
 
-        
-        for k in tqdm(range(n_iter), total=n_iter, ncols=100):
+        #pbar = tqdm(range(n_iter), total=n_iter, ncols=100)
+        for k in range(n_iter):
 
             # MLEM update for x
             attn = torch.exp(-self.A(mu))

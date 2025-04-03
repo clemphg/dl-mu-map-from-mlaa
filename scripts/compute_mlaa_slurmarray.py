@@ -27,11 +27,11 @@ def save_image(lambda_mlaa, mu_mlaa, save_path, filename):
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    tau = 0.00001
+    tau = 0.000001
     bckg_pet = 0
     use_tof = True
 
-    n_iter = 50
+    n_iter = 10
 
     clip_act = 100000
     clip_atn = 0.025
@@ -50,6 +50,10 @@ def main():
         id_patients = pkl.load(f)
     id_patients = id_patients[split]
     print(len(id_patients))
+
+    task_id = int(os.environ['SLURM_ARRAY_TASK_ID'])
+
+    id_patients = id_patients[3*task_id:3*(task_id+1)]
 
     dataset = ImageDataset(path_data=path_data,
                            nb_slices_volume=64,
@@ -72,10 +76,10 @@ def main():
     for id_patient in range(len(dataset)):
 
         filename, image = dataset[id_patient]
+        print(filename)
 
         if filename in os.listdir(save_path_mlaa):
             continue
-        print(filename)
 
         pet_img = image[0].to(device)
         mu_img = image[1].to(device)

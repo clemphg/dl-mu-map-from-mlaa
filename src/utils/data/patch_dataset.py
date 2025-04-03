@@ -17,7 +17,9 @@ class PatchDataset(Dataset):
                  patch_shape: tuple = (32, 32, 32),
                  nb_slices_volume: int = 64,
                  norm_pet = None,
-                 norm_mu = None):
+                 norm_mu = None,
+                 mu_target_only: bool=True,
+                 return_fn: bool=False):
         
         self.__id_patients = id_patients
         
@@ -36,11 +38,16 @@ class PatchDataset(Dataset):
         list_files_targets = os.listdir(path_targets)
         self.__filenames_targets = [file for file in list_files_targets if file.split('.')[0].split('_')[0] in id_patients_str]
 
+        self.__filenames_inputs = sorted(self.__filenames_inputs)
+
         for f in self.__filenames_inputs:
             assert f in self.__filenames_targets
 
         self.norm_pet = norm_pet
         self.norm_mu = norm_mu
+
+        self.mu_target_only = mu_target_only
+        self.return_fn = return_fn
 
     def __len__(self):
         return len(self.__filenames_inputs)
@@ -67,7 +74,7 @@ class PatchDataset(Dataset):
         # body_mask[:trim_d, :, :] = body_mask[:, :trim_h, :] = body_mask[:, :, :trim_w] = 0
         # body_mask[-trim_d:, :, :] = body_mask[:, -trim_h:, :] = body_mask[:, :, -trim_w:] = 0
 
-        body_mask = torch.zeros_like(target_img[1])
+        body_mask = np.zeros_like(target_img[1])
         body_mask[trim_d:-trim_d, trim_h:-trim_h, trim_w:-trim_w] = 1
 
 
@@ -92,9 +99,14 @@ class PatchDataset(Dataset):
             processed_target[1] = self.norm_mu(processed_target[1], clip=True)
 
         processed_input = torch.tensor(processed_input, dtype=torch.float32)
-        processed_target = torch.tensor(processed_target, dtype=torch.float32)[1].unsqueeze(0)
+        processed_target = torch.tensor(processed_target, dtype=torch.float32).squeeze()
+        if self.mu_target_only:
+            processed_target = processed_target[0].unsqueeze(0)
 
-        return processed_input, processed_target
+        if self.return_fn:
+            return filename, processed_input, processed_target
+        else:
+            return processed_input, processed_target
     
 
     def __extract_patch(self, volume, center):

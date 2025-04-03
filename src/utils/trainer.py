@@ -1,11 +1,7 @@
-# TODO: create an abstracte trainer
-#       in it, store all the stuff that can be shared
-#       with many type of trainers, such as optimizer,
-#       gradient clipper, scheduler, dataloader etc.
-
 import os
 from tqdm import tqdm
 from typing import Callable
+import time
 
 import torch
 import torch.nn as nn
@@ -116,20 +112,22 @@ class Trainer():
         best_val_loss_epoch = -1
 
         for epoch in range(self.start_epoch, self.epochs):
+        
+            print(f"Epoch {epoch+1} training started at {time.ctime()}...")
 
             # Training
             self.model.train()
             cum_loss = 0.0
 
-            pbar = tqdm(self.train_dataloader, desc=f"Training epoch {epoch+1}/{self.epochs}", ncols=100)
-            for batch_id, packed in enumerate(pbar):
+            #pbar = tqdm(self.train_dataloader, desc=f"Training epoch {epoch+1}/{self.epochs}", ncols=100)
+            for batch_id, packed in enumerate(self.train_dataloader):
                 
                 x, y = self.one_step(packed)
 
                 loss = self.loss(x, y)
                 cum_loss += loss.item()
 
-                pbar.set_postfix(loss_train=cum_loss/(batch_id+1))
+                #pbar.set_postfix(loss_train=cum_loss/(batch_id+1))
 
                 # optimization steps
                 loss.backward()
@@ -163,15 +161,16 @@ class Trainer():
             self.model.eval()
             cum_loss_val = 0.0
 
-            val_pbar = tqdm(self.val_dataloader, desc=f"Validation epoch {epoch+1}/{self.epochs}", ncols=100)
+            #val_pbar = tqdm(self.val_dataloader, desc=f"Validation epoch {epoch+1}/{self.epochs}", ncols=100)
             with torch.no_grad():
-                for batch_id, packed in enumerate(val_pbar):
+                print(f"Epoch {epoch+1} validation started at {time.ctime()}...")
+                for batch_id, packed in enumerate(self.val_dataloader):
                     x, y = self.one_step(packed)
 
                     loss_val = self.loss(x, y)
                     cum_loss_val += loss_val.item()
         
-                    val_pbar.set_postfix(loss_val=cum_loss_val/(batch_id+1))
+                    #val_pbar.set_postfix(loss_val=cum_loss_val/(batch_id+1))
                 
             # Saving weights
             avg_loss_val = cum_loss_val/len(self.val_dataloader)

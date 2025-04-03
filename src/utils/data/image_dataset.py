@@ -11,7 +11,9 @@ class ImageDataset(Dataset):
     def __init__(self,
                  path_data: str,
                  nb_slices_volume: int = 64,
-                 id_patients: list[int] = None):
+                 id_patients: list[int] = None,
+                 norm_pet = None,
+                 norm_mu = None):
         
         self.__path_data = path_data
         self.__nb_slices_volume = nb_slices_volume
@@ -24,6 +26,8 @@ class ImageDataset(Dataset):
         else:
             self.__filenames_data = list_files_data
 
+        self.norm_pet = norm_pet
+        self.norm_mu = norm_mu
 
     def __len__(self):
         return len(self.__filenames_data)
@@ -39,6 +43,11 @@ class ImageDataset(Dataset):
         # trim volume by bottom of body is requested
         if self.__nb_slices_volume is not None:
             image = image[:, -self.__nb_slices_volume:]
+
+        if self.norm_pet is not None:
+            image[0] = self.norm_pet(image[0], clip=True)
+        if self.norm_mu is not None:
+            image[1] = self.norm_mu(image[1], clip=True)
 
         processed_image = torch.tensor(image, dtype=torch.float32)
 

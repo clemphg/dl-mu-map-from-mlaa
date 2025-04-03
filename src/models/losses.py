@@ -75,25 +75,6 @@ def image_gradient(input_data, accuracy=4, visualize=False):
         gradient_x = nn.functional.conv3d(input_data_x, kernel_x, groups=num_channels, stride=1, padding=0)
         gradient_y = nn.functional.conv3d(input_data_y, kernel_y, groups=num_channels, stride=1, padding=0)
         gradient_z = nn.functional.conv3d(input_data_z, kernel_z, groups=num_channels, stride=1, padding=0)
-
-    
-    # if real_dims == 2:
-    #     kernel_x = filt.view(1, num_channels, filt.shape[2], 1)
-    #     kernel_y = filt.view(1, num_channels, 1, filt.shape[2])
-        
-    #     gradient_x = nn.functional.conv2d(input_data, kernel_x, padding=(filt_radius, 0), groups=num_channels)
-    #     gradient_y = nn.functional.conv2d(input_data, kernel_y, padding=(0, filt_radius), groups=num_channels)
-        
-    #     return {'x': gradient_x, 'y': gradient_y}
-    
-    # elif real_dims == 3:
-    #     kernel_x = filt.view(1, num_channels, filt.shape[2], 1, 1)
-    #     kernel_y = filt.view(1, num_channels, 1, filt.shape[2], 1)
-    #     kernel_z = filt.view(1, num_channels, 1, 1, filt.shape[2])
-        
-    #     gradient_x = nn.functional.conv3d(input_data, kernel_x, padding=(filt_radius, 0, 0), groups=num_channels)
-    #     gradient_y = nn.functional.conv3d(input_data, kernel_y, padding=(0, filt_radius, 0), groups=num_channels)
-    #     gradient_z = nn.functional.conv3d(input_data, kernel_z, padding=(0, 0, filt_radius), groups=num_channels)
         
         return {'x': gradient_x, 'y': gradient_y, 'z': gradient_z}
     else:
