@@ -5,7 +5,7 @@
 .env
 
 # test files
-**test.**
+**test.ipynb**
 
 
 **weights/
